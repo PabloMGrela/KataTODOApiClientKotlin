@@ -27,6 +27,15 @@ class TodoApiClientTest : MockWebServerTest() {
     -Parses the created task response properly X
     -Server error 500 X
     -Task not found 404 X
+
+    CREATE TASK
+    -Request sent to the expected path X
+    -Request sent with expected method X
+    -Body contains expected data X
+    -Parses the information from the response with task created X
+    -Returns 404 error. X
+    -Server error 500 X
+    -Bad request
      */
 
     private lateinit var apiClient: TodoApiClient
@@ -128,6 +137,66 @@ class TodoApiClientTest : MockWebServerTest() {
         val error = apiClient.getTaskById("0").left
 
         assertEquals(ItemNotFoundError, error)
+    }
+
+    @Test
+    fun whenRequestIsSentToCreateANewTaskPathIsCorrect() {
+        enqueueMockResponse(200, "addTaskResponse.json")
+
+        apiClient.addTask(TaskDto("1", "userId", "title", false))
+
+        assertPostRequestSentTo("/todos")
+    }
+
+    @Test
+    fun whenRequestIsSentToCreateANewTaskBodyContainsExpectedData() {
+        enqueueMockResponse(200, "addTaskResponse.json")
+        val body = TaskDto("1", "1", "delectus aut autem", false)
+
+        apiClient.addTask(body)
+
+        assertTaskContainsExpectedValues(body)
+    }
+
+    @Test
+    fun whenRequestIsSentToCreateANewTaskResponseHasExpectedData() {
+        enqueueMockResponse(200, "addTaskResponse.json")
+        val body = TaskDto("1", "2", "Finish this kata", false)
+
+        apiClient.addTask(body).right
+
+        assertRequestBodyEquals("addTaskRequest.json")
+    }
+
+    @Test
+    fun whenRequestIsSentToInvalidUserAnErrorIsResponse() {
+        enqueueMockResponse(404, null)
+
+        val body = TaskDto("2", "1", "delectus aut autem", false)
+
+        val result = apiClient.addTask(body).left
+
+        assertEquals(ItemNotFoundError, result)
+    }
+
+    @Test
+    fun whenRequestIsSentToCreateANewTaskServerReturnsAnError() {
+        enqueueMockResponse(500, null)
+        val body = TaskDto("2", "1", "delectus aut autem", false)
+
+        val result = apiClient.addTask(body).left
+
+        assertEquals(UnknownApiError(500), result)
+    }
+
+    @Test
+    fun whenRequestIsSentWithMalformedBodyServerReturnsAnError() {
+        enqueueMockResponse(400, null)
+        val body = TaskDto("", "1", "delectus aut autem", false)
+
+        val result = apiClient.addTask(body).left
+
+        assertEquals(UnknownApiError(400), result)
     }
 
 
