@@ -36,6 +36,12 @@ class TodoApiClientTest : MockWebServerTest() {
     -Returns 404 error. X
     -Server error 500 X
     -Bad request
+
+    DELETE TASK
+    -Request sent to the expected path X
+    -Request sent with expected method X
+    -Returns 404 error X
+    -Server error 500 X
      */
 
     private lateinit var apiClient: TodoApiClient
@@ -199,6 +205,32 @@ class TodoApiClientTest : MockWebServerTest() {
         assertEquals(UnknownApiError(400), result)
     }
 
+    @Test
+    fun whenRequestIsSentToDeleteTaskPathIsCorrect() {
+        enqueueMockResponse(200, null)
+
+        apiClient.deleteTaskById("1")
+
+        assertDeleteRequestSentTo("/todos/1")
+    }
+
+    @Test
+    fun whenRequestIsSentToDeleteATaskServerReturnsAnError() {
+        enqueueMockResponse(500, null)
+
+        val result = apiClient.deleteTaskById("1")
+
+        assertEquals(UnknownApiError(500), result)
+    }
+
+    @Test
+    fun whenRequestToDeleteTaskIsSentWithUnknownUserIdReturnsAnError() {
+        enqueueMockResponse(404, null)
+
+        val result = apiClient.deleteTaskById("as")
+
+        assertEquals(ItemNotFoundError, result)
+    }
 
     private fun assertTaskContainsExpectedValues(task: TaskDto?) {
         assertTrue(task != null)
